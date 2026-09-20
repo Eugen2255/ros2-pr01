@@ -1,0 +1,20 @@
+{
+  "run_mode": "docker",
+  "os": "Ubuntu 26.04 LTS",
+  "architecture": "x86_64",
+  "ros_distro": "lyrical",
+  "gazebo": {
+    "distribution": "Jetty",
+    "version": "8.11.0"
+  },
+  "rmw_implementation": "rmw_fastrtps_cpp",
+  "ros_domain_id": 16,
+  "experiment_domains": {
+    "working": 16,
+    "broken": 17
+  },
+  "docker_image_digest": "osrf/ros:lyrical-desktop-full@sha256:e6b1cb530b65588279681db53784e264ce5cf83f2cc33e689d27d6024d7f3ebe",
+  "network": "bridge; все ноды и CLI внутри одного контейнера",
+  "gui": "X11, окно turtlesim на Linux-хосте",
+  "recorded_at_utc": "2026-09-11T08:52:54Z"
+}
