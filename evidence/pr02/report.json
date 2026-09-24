@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "practice_id": "PR02",
+  "commit": "b5f1b1897e647e382cdb1e70d4c9cf8de8ef26e0",
+  "course_kit": {
+    "version": "v1-w02",
+    "archive_sha256": "5d210c431e32418f45e2cffa9dd2028116c7a9520a36f3c7079c778cd73437a8"
+  },
+  "commands": [
+    "ros2 pkg create --build-type ament_python --license Apache-2.0 turtle_bringup --dependencies launch launch_ros turtlesim",
+    "colcon build --symlink-install --packages-select turtle_bringup 2>&1 | tee evidence/pr02/build-empty.txt",
+    "colcon build --symlink-install --packages-select turtle_bringup 2>&1 | tee evidence/pr02/build.txt",
+    "test -f \"$(ros2 pkg prefix turtle_bringup)/share/turtle_bringup/launch/sim.launch.py\"",
+    "python3 -m py_compile src/turtle_bringup/launch/sim.launch.py",
+    "python3 -m pytest test -q",
+    "ros2 launch turtle_bringup sim.launch.py",
+    "ros2 node list --no-daemon --spin-time 2",
+    "ros2 topic list -t --no-daemon --spin-time 2",
+    "ros2 interface show geometry_msgs/msg/Twist",
+    "ros2 topic type /turtle1/pose",
+    "ros2 topic echo /turtle1/pose --once",
+    "ros2 topic pub --once /turtle1/cmd_vel geometry_msgs/msg/Twist '{linear: {x: 1.0}, angular: {z: 0.5}}'",
+    "ros2 topic pub --rate 1 --wait-matching-subscriptions 0 /cmd_vel geometry_msgs/msg/Twist '{linear: {x: 1.0}, angular: {z: 0.5}}'",
+    "ros2 topic info /cmd_vel --verbose --no-daemon --spin-time 2",
+    "ros2 topic info /turtle1/cmd_vel --verbose --no-daemon --spin-time 2",
+    "ros2 topic pub --rate 1 --wait-matching-subscriptions 0 /turtle1/cmd_vel geometry_msgs/msg/Twist '{linear: {x: 1.0}, angular: {z: 0.5}}'",
+    "python3 .course-kit/v1/tools/check_practice.py PR02 --submission ."
+  ],
+  "tests": [
+    {
+      "name": "Пустой пакет turtle_bringup собран и найден через ros2 pkg prefix",
+      "status": "passed",
+      "evidence": "build-empty.txt"
+    },
+    {
+      "name": "Launch установлен в share/turtle_bringup/launch, py_compile успешен",
+      "status": "passed",
+      "evidence": "build.txt"
+    },
+    {
+      "name": "Тесты каркаса пакета: 4 passed, 1 skipped (copyright)",
+      "status": "passed",
+      "evidence": "commands.md"
+    },
+    {
+      "name": "ros2 launch запустил /turtlesim; после Ctrl+C нода исчезла",
+      "status": "passed",
+      "evidence": "nodes.txt, nodes-after-stop.txt"
+    },
+    {
+      "name": "pub --once в /turtle1/cmd_vel изменил позу: x 5.544 -> 6.509, theta 0 -> 0.504",
+      "status": "passed",
+      "evidence": "pose-before.txt, pose-after-once.txt"
+    },
+    {
+      "name": "У /cmd_vel 1 издатель и 0 подписчиков; поза не изменилась",
+      "status": "passed",
+      "evidence": "info-cmd_vel-broken.txt, info-turtle1-cmd_vel-broken.txt, pose-broken-before.txt, pose-broken-after.txt"
+    },
+    {
+      "name": "После исправления имени у /turtle1/cmd_vel 1 издатель и 1 подписчик; поза меняется",
+      "status": "passed",
+      "evidence": "info-turtle1-cmd_vel-fixed.txt, pose-fixed-before.txt, pose-fixed-after.txt"
+    }
+  ],
+  "defect": {
+    "reproducer": "ros2 topic pub --rate 1 --wait-matching-subscriptions 0 /cmd_vel geometry_msgs/msg/Twist '{linear: {x: 1.0}, angular: {z: 0.5}}'. Издатель отправил 49 сообщений, ros2 topic info /cmd_vel: Publisher count 1, Subscription count 0; поза осталась x=6.509309, y=5.796991, theta=0.504.",
+    "root_cause": "turtlesim подписан на /turtle1/cmd_vel, а /cmd_vel — другой топик без подписчиков. Совпадение типа Twist и домена не соединяет издателя с подписчиком: DDS сопоставляет конечные точки по имени топика. Топик обнаружен в графе, но сообщения никому не доставляются.",
+    "proof_after": "Изменено только имя на /turtle1/cmd_vel. ros2 topic info /turtle1/cmd_vel: Publisher count 1, Subscription count 1 (turtlesim); поза изменилась на x=7.341527, y=6.683215, theta=1.122, linear_velocity=1.0, angular_velocity=0.5."
+  },
+  "claims": {
+    "public_tests_passed": true,
+    "defect_reproduced": true,
+    "defect_fixed": true
+  },
+  "time": {
+    "contact_academic_hours": 2,
+    "self_study_hours": 2
+  },
+  "ai_used": true,
+  "recorded_at_utc": "2026-09-24T16:39:52Z"
+}
