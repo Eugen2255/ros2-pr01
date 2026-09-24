@@ -1,3 +1,7 @@
-.course-kit
+build/
+install/
+log/
+.course-kit/
 course-kit.tar.gz
-.gitignore
+__pycache__/
+.pytest_cache/

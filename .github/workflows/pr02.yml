@@ -1,0 +1,58 @@
+name: PR02 — сборка пакета и проверка отчёта
+
+on: [push, pull_request]
+
+jobs:
+  practice:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    container: osrf/ros:lyrical-desktop-full
+    env:
+      COURSE_KIT_URL: https://ros.lms.ci.nsu.ru/downloads/robotics-course-kit-v1-w02-5d210c431e32.tar.gz
+      COURSE_KIT_SHA256: 5d210c431e32418f45e2cffa9dd2028116c7a9520a36f3c7079c778cd73437a8
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Получить всю историю коммитов
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Разрешить git работать с каталогом в контейнере
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Собрать turtle_bringup
+        run: |
+          set -o pipefail
+          source /opt/ros/lyrical/setup.bash
+          colcon build --symlink-install --packages-select turtle_bringup
+      - name: Проверить установленный launch
+        run: |
+          source /opt/ros/lyrical/setup.bash
+          source install/setup.bash
+          prefix="$(ros2 pkg prefix turtle_bringup)"
+          test -f "$prefix/share/turtle_bringup/launch/sim.launch.py"
+          python3 -m py_compile src/turtle_bringup/launch/sim.launch.py
+      - name: Тесты каркаса пакета
+        run: |
+          source /opt/ros/lyrical/setup.bash
+          cd src/turtle_bringup
+          python3 -m pytest test -q
+      - name: Скачать зафиксированный комплект курса
+        run: |
+          curl -fsSLo course-kit.tar.gz "$COURSE_KIT_URL"
+          printf '%s  %s\n' "$COURSE_KIT_SHA256" course-kit.tar.gz | sha256sum -c -
+          mkdir -p .course-kit
+          tar -xzf course-kit.tar.gz -C .course-kit
+      - name: Проверить JSON и совпадение версии архива
+        run: |
+          python3 -m json.tool evidence/pr02/report.json > /dev/null
+          python3 - <<'PYTHON'
+          import json
+          import os
+          from pathlib import Path
+          report = json.loads(Path('evidence/pr02/report.json').read_text())
+          if report['course_kit']['archive_sha256'] != os.environ['COURSE_KIT_SHA256']:
+              raise SystemExit('SHA-256 комплекта в отчёте отличается от архива CI')
+          PYTHON
+      - name: Проверить контракт evidence и коммит реализации
+        run: python3 .course-kit/v1/tools/check_practice.py PR02 --submission .
