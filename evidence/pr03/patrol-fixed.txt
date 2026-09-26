@@ -1,0 +1,4 @@
+[INFO] [1790438291.100353052] [patrol]: publishing to /turtle1/cmd_vel, waiting for /turtle1/pose
+[INFO] [1790438291.200723217] [patrol]: first pose: x=5.544 y=5.544 theta=0.000
+[ros2run]: Received signal:  Interrupt
+exit=0

@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "practice_id": "PR03",
+  "commit": "5817e4d9dada612038d0e56df60ff57972b9b562",
+  "course_kit": {
+    "version": "v1-w03",
+    "archive_sha256": "7fbfd3e8161ab6c6ebefc7663efdaf77d9a7d490399743507f33dcefbd5ac522"
+  },
+  "commands": [
+    "colcon build --symlink-install --packages-select turtle_bringup patrol",
+    "(cd src/patrol && python3 -m pytest test -v)",
+    "ros2 launch turtle_bringup sim.launch.py",
+    "ros2 run patrol patrol",
+    "ros2 topic echo /cmd_vel --once",
+    "ros2 node info /patrol --no-daemon --spin-time 2",
+    "ros2 topic info /cmd_vel --verbose --no-daemon --spin-time 2",
+    "ros2 topic info /turtle1/cmd_vel --verbose --no-daemon --spin-time 2",
+    "ros2 topic echo /turtle1/pose --once",
+    "ros2 run patrol patrol --ros-args -r cmd_vel:=/turtle1/cmd_vel",
+    "ros2 topic echo /turtle1/cmd_vel --once",
+    "timeout --signal=INT 12s ros2 topic hz /turtle1/cmd_vel",
+    "ros2 node list --no-daemon --spin-time 2",
+    "python3 .course-kit/v1/tools/check_practice.py PR03 --submission ."
+  ],
+  "tests": [
+    {
+      "name": "Тесты пакета patrol: 7 passed, 1 skipped (чистая функция, flake8, pep257, mypy, xmllint)",
+      "status": "passed",
+      "evidence": "tests.txt"
+    },
+    {
+      "name": "Без позы нода публикует нулевую команду 0.0/0.0",
+      "status": "passed",
+      "evidence": "cmd-before-pose.txt"
+    },
+    {
+      "name": "Подписка получила позу (first pose x=5.544), команда стала 0.5/0.3",
+      "status": "passed",
+      "evidence": "patrol-broken.txt, cmd-after-pose-broken.txt"
+    },
+    {
+      "name": "Без remap: /cmd_vel 1 издатель, 0 подписчиков; поза не меняется",
+      "status": "passed",
+      "evidence": "node-info-broken.txt, info-cmd_vel-broken.txt, info-turtle1-cmd_vel-broken.txt, pose-broken-1.txt, pose-broken-2.txt"
+    },
+    {
+      "name": "С remap: /turtle1/cmd_vel 1 издатель и 1 подписчик; поза меняется со скоростями 0.5/0.3",
+      "status": "passed",
+      "evidence": "info-turtle1-cmd_vel-fixed.txt, cmd-fixed.txt, pose-fixed-1.txt, pose-fixed-2.txt"
+    },
+    {
+      "name": "Частота команды 10.000 Гц на окне 110 интервалов (≈11 с)",
+      "status": "passed",
+      "evidence": "hz.txt"
+    },
+    {
+      "name": "Ctrl+C: нода завершилась с exit=0 без трейсбека и исчезла из графа",
+      "status": "passed",
+      "evidence": "patrol-fixed.txt, nodes-after-patrol-stop.txt"
+    }
+  ],
+  "defect": {
+    "reproducer": "ros2 run patrol patrol при запущенном turtlesim. Нода публикует Twist 0.5/0.3 в относительный cmd_vel, который разрешился в /cmd_vel: Publisher count 1, Subscription count 0; у /turtle1/cmd_vel издателей 0. Поза x=5.544445, y=5.544445, theta=0.0 не меняется за 3 с.",
+    "root_cause": "Относительное имя cmd_vel разрешается относительно пространства имён ноды (/) в /cmd_vel, а turtlesim подписан на /turtle1/cmd_vel. Тип и домен совпадают, но имена топиков разные, поэтому DDS не сопоставляет издателя с подписчиком: топик обнаружен в графе, сообщения не доставляются.",
+    "proof_after": "ros2 run patrol patrol --ros-args -r cmd_vel:=/turtle1/cmd_vel без изменения кода. /turtle1/cmd_vel: Publisher count 1 (patrol), Subscription count 1 (turtlesim); /cmd_vel исчез. Поза изменилась с x=3.923948, theta=-1.819 на x=4.636032, theta=-0.576 при скоростях 0.5/0.3; ros2 topic hz: average rate 10.000, window 110."
+  },
+  "claims": {
+    "public_tests_passed": true,
+    "defect_reproduced": true,
+    "defect_fixed": true
+  },
+  "time": {
+    "contact_academic_hours": 2,
+    "self_study_hours": 2
+  },
+  "ai_used": true,
+  "recorded_at_utc": "2026-09-26T16:02:43Z"
+}

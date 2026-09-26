@@ -26,3 +26,25 @@
   и check_practice.py PR02 выполнены локально.
 
 Переписка и промпты не приложены.
+
+## PR03
+
+- Использован ИИ: да
+- Модель и версия: Claude Opus 5.5 (Anthropic)
+- Среда или интерфейс агента: Claude Code (CLI) на Windows с доступом к WSL 2
+  и Docker-контейнеру osrf/ros:lyrical-desktop-full
+- Затронутые компоненты: пакет src/patrol — нода patrol/patrol.py, чистая
+  функция patrol/control.py, тесты test/test_control.py; README;
+  workflow .github/workflows/pr03.yml; evidence/pr03 (demo.md, report.json).
+- Характер помощи: разбор задания; код ноды (подписка, таймер, издатель
+  в относительный cmd_vel), вынесение логики в чистую функцию и её тесты;
+  исправление завершения по Ctrl+C (RCLError при штатном обработчике SIGINT
+  rclpy); CI; черновик demo.md по фактическим выводам CLI.
+- Как результат был проверен независимо: сборка, тесты пакета и опыт
+  (запуск без remap и с remap, topic info, измерение частоты за 10 с,
+  остановка по Ctrl+C) выполнены автором в контейнере ROS 2 Lyrical,
+  окно turtlesim наблюдалось через WSLg; выводы в demo.md сверены
+  с сохранёнными выводами ros2 CLI и pytest. check_practice.py PR03
+  выполнен локально.
+
+Переписка и промпты не приложены.
